@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>UMS Admin Portal</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="admin">
+<header>
+    <strong>UMS | Admin Portal</strong>
+    <span class="right"><span id="who"></span><button id="logout" class="light">Logout</button></span>
+</header>
+<main>
+    <div id="msg"></div>
+
+    <div class="stats">
+        <div class="stat"><span id="n_admins">0</span>Admins</div>
+        <div class="stat"><span id="n_teachers">0</span>Teachers</div>
+        <div class="stat"><span id="n_students">0</span>Students</div>
+    </div>
+
+    <div class="tabs">
+        <button data-tab="admins" class="active">Admins</button>
+        <button data-tab="teachers">Teachers</button>
+        <button data-tab="students">Students</button>
+    </div>
+
+    <div id="p_admins"></div>
+    <div id="p_teachers" class="hidden"></div>
+    <div id="p_students" class="hidden"></div>
+</main>
+
+<script src="/js/common.js"></script>
+<script>
+    (async () => {
+      const me = await requireRole('ADMIN');
+      if (!me) return;
+
+      const count = key => n => { $('#n_' + key).textContent = n; };
+      new Panel($('#p_admins'),   'admins',   'Admin',   false, count('admins'));
+      new Panel($('#p_teachers'), 'teachers', 'Teacher', true,  count('teachers'));
+      new Panel($('#p_students'), 'students', 'Student', true,  count('students'));
+
+      document.querySelectorAll('.tabs button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('active', b === btn));
+          ['admins', 'teachers', 'students'].forEach(k =>
+            $('#p_' + k).classList.toggle('hidden', k !== btn.dataset.tab));
+          $('#msg').textContent = '';
+        });
+      });
+    })();
+</script>
+</body>
+</html>

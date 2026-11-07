@@ -8,7 +8,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 
 @Configuration
 public class SecurityConfig {
@@ -23,6 +22,10 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/", "/index.html", "/favicon.ico", "/css/**", "/js/**").permitAll()
+                        .requestMatchers("/admin.html").hasRole("ADMIN")
+                        .requestMatchers("/teacher.html").hasRole("TEACHER")
+                        .requestMatchers("/student.html").hasRole("STUDENT")
                         .requestMatchers("/api/admins/**").hasRole("ADMIN")
                         .requestMatchers("/api/teachers/**").hasAnyRole("ADMIN", "TEACHER")
                         .requestMatchers("/api/students/**").hasAnyRole("ADMIN", "STUDENT")
@@ -50,7 +53,24 @@ public class SecurityConfig {
                         .permitAll())
                 .httpBasic(Customizer.withDefaults())
                 .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)));
+                        .authenticationEntryPoint((req, res, e) -> {
+                            if (req.getRequestURI().startsWith("/api")) {
+                                res.setStatus(HttpStatus.UNAUTHORIZED.value());
+                                res.setContentType("application/json");
+                                res.getWriter().write("{\"error\":\"Not logged in\"}");
+                            } else {
+                                res.sendRedirect("/index.html");
+                            }
+                        })
+                        .accessDeniedHandler((req, res, e) -> {
+                            if (req.getRequestURI().startsWith("/api")) {
+                                res.setStatus(HttpStatus.FORBIDDEN.value());
+                                res.setContentType("application/json");
+                                res.getWriter().write("{\"error\":\"Access denied for your role\"}");
+                            } else {
+                                res.sendRedirect("/index.html?denied=1");
+                            }
+                        }));
         return http.build();
     }
 }

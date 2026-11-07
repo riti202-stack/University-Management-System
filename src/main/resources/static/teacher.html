@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>UMS Teacher Portal</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="teacher">
+<header>
+    <strong>UMS | Teacher Portal</strong>
+    <span class="right"><span id="who"></span><button id="logout" class="light">Logout</button></span>
+</header>
+<main>
+    <div id="msg"></div>
+    <div id="panel"></div>
+</main>
+
+<script src="/js/common.js"></script>
+<script>
+    (async () => {
+      const me = await requireRole('TEACHER');
+      if (!me) return;
+      new Panel($('#panel'), 'teachers', 'Teacher', true);
+    })();
+</script>
+</body>
+</html>

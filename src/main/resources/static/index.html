@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>UMS Login</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="login-wrap">
+    <div class="card">
+        <h2>University Management System</h2>
+        <div id="msg"></div>
+        <input id="u" placeholder="Username" autocomplete="username">
+        <input id="p" type="password" placeholder="Password" autocomplete="current-password">
+        <button id="go">Login</button>
+        <div class="hint">First time? The default admin is <b>admin</b> / <b>admin123</b>.</div>
+    </div>
+</div>
+
+<script src="/js/common.js"></script>
+<script>
+    const PORTAL = { ADMIN: '/admin.html', TEACHER: '/teacher.html', STUDENT: '/student.html' };
+
+    async function goToPortal() {
+      const me = await api('/api/me');
+      if (!me.ok) return false;
+      const role = me.data.roles[0].replace('ROLE_', '');
+      location.href = PORTAL[role] || '/index.html';
+      return true;
+    }
+
+    async function login() {
+      const body = new URLSearchParams({ username: $('#u').value, password: $('#p').value });
+      const r = await api('/api/auth/login', { method: 'POST', body });
+      if (!r.ok) return say('Login failed: ' + errorText(r), false);
+      await goToPortal();
+    }
+
+    $('#go').addEventListener('click', login);
+    $('#p').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+
+    if (new URLSearchParams(location.search).get('denied')) {
+      say('You do not have access to that page.', false);
+    } else {
+      goToPortal();   // already logged in? go straight to your portal
+    }
+</script>
+</body>
+</html>
