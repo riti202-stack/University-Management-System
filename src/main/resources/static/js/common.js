@@ -21,6 +21,7 @@ async function api(path, opts = {}) {
 }
 
 function errorText(r) {
+if (r.data && typeof r.data === 'object' && r.data.error) return r.data.error;
   if (r.status === 401) return 'You are not logged in (401)';
   if (r.status === 403) return 'Access denied (403): your role cannot do this';
   if (r.data && typeof r.data === 'object') {

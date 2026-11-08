@@ -13,15 +13,41 @@
 </header>
 <main>
     <div id="msg"></div>
-    <div id="panel"></div>
+
+    <div class="tabs">
+        <button data-tab="profile" class="active">My Profile</button>
+        <button data-tab="students">Students</button>
+    </div>
+
+    <div id="p_profile"></div>
+    <div id="p_students" class="hidden"></div>
 </main>
 
 <script src="/js/common.js"></script>
+<script src="/js/profile-panel.js"></script>
+<script src="/js/student-panel.js"></script>
 <script>
     (async () => {
       const me = await requireRole('TEACHER');
       if (!me) return;
-      new Panel($('#panel'), 'teachers', 'Teacher', true);
+
+      new ProfilePanel($('#p_profile'), 'teachers',
+        [
+          { key: 'name', label: 'Full name' },
+          { key: 'email', label: 'Email' },
+          { key: 'department', label: 'Department' }
+        ],
+        [ { key: 'username', label: 'Username' } ]);
+      new StudentPanel($('#p_students'));
+
+      document.querySelectorAll('.tabs button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('active', b === btn));
+          ['profile', 'students'].forEach(k =>
+            $('#p_' + k).classList.toggle('hidden', k !== btn.dataset.tab));
+          $('#msg').textContent = '';
+        });
+      });
     })();
 </script>
 </body>

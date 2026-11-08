@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>UMS - Create account</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="login-wrap" style="max-width:460px">
+    <div class="card">
+        <h2>Create an account</h2>
+        <div id="msg"></div>
+
+        <select id="role" style="width:100%">
+            <option value="student">I am a student</option>
+            <option value="teacher">I am a teacher</option>
+        </select>
+
+        <input id="name" placeholder="Full name">
+        <input id="email" placeholder="Email">
+        <input id="username" placeholder="Username (3-50 characters)">
+        <input id="password" type="password" placeholder="Password (min 6 characters)">
+        <input id="department" placeholder="Department">
+
+        <div id="studentFields">
+            <input id="roll" placeholder="Roll">
+            <input id="age" type="number" min="1" max="120" placeholder="Age">
+            <input id="batch" placeholder="Batch (e.g. 2022)">
+            <input id="className" placeholder="Class (e.g. CSE-A)">
+        </div>
+
+        <button id="go" type="button">Create account</button>
+        <div class="hint">Already have an account? <a href="/index.html">Login</a></div>
+    </div>
+</div>
+
+<script src="/js/common.js"></script>
+<script>
+    document.getElementById('role').addEventListener('change', function () {
+      document.getElementById('studentFields').classList.toggle('hidden', this.value !== 'student');
+    });
+
+    async function register() {
+      try {
+        const role = document.getElementById('role').value;
+        const body = {
+          name: document.getElementById('name').value,
+          email: document.getElementById('email').value,
+          username: document.getElementById('username').value,
+          password: document.getElementById('password').value,
+          department: document.getElementById('department').value
+        };
+        if (role === 'student') {
+          body.roll = document.getElementById('roll').value;
+          body.batch = document.getElementById('batch').value;
+          body.className = document.getElementById('className').value;
+          const age = document.getElementById('age').value.trim();
+          body.age = age === '' ? null : Number(age);
+        }
+
+        say('Creating account...', true);
+        const r = await api('/api/auth/register/' + role, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        if (!r.ok) return say(errorText(r), false);
+
+        if (role === 'teacher') {
+          say('Account created. An admin must approve it before you can log in.', true);
+          document.getElementById('go').disabled = true;
+          return;
+        }
+
+        // students log in straight away
+        const form = new URLSearchParams({ username: body.username, password: body.password });
+        const login = await api('/api/auth/login', { method: 'POST', body: form });
+        location.href = login.ok ? '/student.html' : '/index.html';
+      } catch (e) {
+        say('Something went wrong: ' + e.message, false);
+      }
+    }
+
+    document.getElementById('go').addEventListener('click', register);
+</script>
+</body>
+</html>

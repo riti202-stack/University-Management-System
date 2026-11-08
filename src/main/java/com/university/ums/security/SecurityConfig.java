@@ -22,13 +22,24 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/index.html", "/favicon.ico", "/css/**", "/js/**").permitAll()
+                        // public: login page, sign-up page, static files, sign-up API
+                        .requestMatchers("/", "/index.html", "/register.html", "/favicon.ico", "/css/**", "/js/**").permitAll()
+                        .requestMatchers("/api/auth/register/**").permitAll()
+
+                        // portal pages
                         .requestMatchers("/admin.html").hasRole("ADMIN")
                         .requestMatchers("/teacher.html").hasRole("TEACHER")
                         .requestMatchers("/student.html").hasRole("STUDENT")
+
+                        // own profile (must come before the broader rules below)
+                        .requestMatchers("/api/students/me").hasRole("STUDENT")
+                        .requestMatchers("/api/teachers/me").hasRole("TEACHER")
+
+                        // managing other people
                         .requestMatchers("/api/admins/**").hasRole("ADMIN")
-                        .requestMatchers("/api/teachers/**").hasAnyRole("ADMIN", "TEACHER")
-                        .requestMatchers("/api/students/**").hasAnyRole("ADMIN", "STUDENT")
+                        .requestMatchers("/api/teachers/**").hasRole("ADMIN")
+                        .requestMatchers("/api/students/**").hasAnyRole("ADMIN", "TEACHER")
+
                         .anyRequest().authenticated())
                 .formLogin(form -> form
                         .loginProcessingUrl("/api/auth/login")
@@ -38,9 +49,12 @@ public class SecurityConfig {
                             res.getWriter().write("{\"message\":\"Login successful\"}");
                         })
                         .failureHandler((req, res, ex) -> {
+                            boolean pending = ex instanceof org.springframework.security.authentication.DisabledException;
                             res.setStatus(HttpStatus.UNAUTHORIZED.value());
                             res.setContentType("application/json");
-                            res.getWriter().write("{\"error\":\"Invalid username or password\"}");
+                            res.getWriter().write(pending
+                                    ? "{\"error\":\"Your account is waiting for admin approval\"}"
+                                    : "{\"error\":\"Invalid username or password\"}");
                         })
                         .permitAll())
                 .logout(logout -> logout

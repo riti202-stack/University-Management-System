@@ -17,11 +17,26 @@
 </main>
 
 <script src="/js/common.js"></script>
+<script src="/js/profile-panel.js"></script>
 <script>
     (async () => {
       const me = await requireRole('STUDENT');
       if (!me) return;
-      new Panel($('#panel'), 'students', 'Student', true);
+
+      new ProfilePanel($('#panel'), 'students',
+        [
+          { key: 'name', label: 'Full name' },
+          { key: 'email', label: 'Email' },
+          { key: 'roll', label: 'Roll' },
+          { key: 'age', label: 'Age', type: 'number' },
+          { key: 'batch', label: 'Batch' },
+          { key: 'className', label: 'Class' },
+          { key: 'department', label: 'Department' }
+        ],
+        [
+          { key: 'username', label: 'Username' },
+          { key: 'gpa', label: 'GPA (set by your teachers)' }
+        ]);
     })();
 </script>
 </body>

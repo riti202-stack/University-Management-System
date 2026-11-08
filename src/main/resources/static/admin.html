@@ -18,6 +18,15 @@
         <div class="stat"><span id="n_admins">0</span>Admins</div>
         <div class="stat"><span id="n_teachers">0</span>Teachers</div>
         <div class="stat"><span id="n_students">0</span>Students</div>
+        <div class="stat"><span id="n_pending">0</span>Pending teachers</div>
+    </div>
+
+    <div class="card" id="pendingCard">
+        <h3>Pending teacher approvals</h3>
+        <table>
+            <thead><tr><th>Name</th><th>Email</th><th>Username</th><th>Department</th><th>Actions</th></tr></thead>
+            <tbody id="pendingRows"></tbody>
+        </table>
     </div>
 
     <div class="tabs">
@@ -32,15 +41,53 @@
 </main>
 
 <script src="/js/common.js"></script>
+<script src="/js/student-panel.js"></script>
 <script>
     (async () => {
       const me = await requireRole('ADMIN');
       if (!me) return;
 
       const count = key => n => { $('#n_' + key).textContent = n; };
-      new Panel($('#p_admins'),   'admins',   'Admin',   false, count('admins'));
-      new Panel($('#p_teachers'), 'teachers', 'Teacher', true,  count('teachers'));
-      new Panel($('#p_students'), 'students', 'Student', true,  count('students'));
+      new Panel($('#p_admins'), 'admins', 'Admin', false, count('admins'));
+      const teachersPanel = new Panel($('#p_teachers'), 'teachers', 'Teacher', true, count('teachers'));
+      new StudentPanel($('#p_students'), count('students'));
+
+      async function loadPending() {
+        const r = await api('/api/teachers');
+        const pending = r.ok ? r.data.filter(t => t.approved === false) : [];
+        $('#n_pending').textContent = pending.length;
+        $('#pendingRows').innerHTML = pending.length
+          ? pending.map(t => `
+              <tr>
+                <td>${esc(t.name)}</td><td>${esc(t.email)}</td>
+                <td>${esc(t.username)}</td><td>${esc(t.department)}</td>
+                <td>
+                  <button class="small approve" data-id="${esc(t.id)}">Approve</button>
+                  <button class="small danger reject" data-id="${esc(t.id)}">Reject</button>
+                </td>
+              </tr>`).join('')
+          : '<tr><td colspan="5" class="empty">No teachers waiting for approval</td></tr>';
+      }
+
+      $('#pendingRows').addEventListener('click', async e => {
+        const btn = e.target.closest('button');
+        if (!btn) return;
+        const id = btn.dataset.id;
+        if (btn.classList.contains('approve')) {
+          const r = await api('/api/teachers/' + id + '/approve', { method: 'PUT' });
+          if (!r.ok) return say(errorText(r), false);
+          say('Teacher approved', true);
+        } else {
+          if (!confirm('Reject and delete this registration?')) return;
+          const r = await api('/api/teachers/' + id, { method: 'DELETE' });
+          if (!r.ok) return say(errorText(r), false);
+          say('Registration rejected', true);
+        }
+        loadPending();
+        teachersPanel.load();
+      });
+
+      loadPending();
 
       document.querySelectorAll('.tabs button').forEach(btn => {
         btn.addEventListener('click', () => {

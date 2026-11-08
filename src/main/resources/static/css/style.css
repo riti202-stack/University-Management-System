@@ -41,3 +41,8 @@ th { background: #f9fafb; }
 .login-wrap input { width: 100%; margin: 6px 0; }
 .login-wrap button { width: 100%; margin-top: 10px; }
 .hint { color: #666; font-size: 13px; margin-top: 12px; }
+
+select { padding: 9px; margin: 4px 6px 4px 0; border: 1px solid #bbb; border-radius: 4px; background: #fff; }
+.grid label { display: inline-block; margin: 6px 14px 6px 0; font-size: 13px; color: #555; }
+.grid label input { display: block; margin-top: 3px; }
+.readonly p { margin: 6px 0; }
